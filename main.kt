@@ -1,4 +1,6 @@
 
+import kotlin.math.*
+
 // Stack functions: I'd rather like to use push pop and peek in a stack
 fun <T> ArrayDeque<T>.push(item: T) {
     this.addLast(item)
@@ -29,7 +31,7 @@ data class InvalidToken(val value: String) : Token()
 
 fun tokenize(input: String): List<Token> {
     val tokens = mutableListOf<Token>()
-    val tokenPatterns = """([-]*\d+(\.\d+)?)|([+\-*/]|sqr)""".toRegex()
+    val tokenPatterns = """([-]*\d+(\.\d+)?)|([+\-*/]|sqr|exp|sin|cos|pow)""".toRegex()
     val matches = tokenPatterns.findAll(input)
     for (match in matches) {
         val (number, _, operator) = match.destructured
@@ -47,33 +49,36 @@ sealed class Operator {
     abstract fun apply(stack: ArrayDeque<Double>)
 }
 
+private fun binaryOp(stack: ArrayDeque<Double>, op: (Double, Double) -> Double) {
+    if (stack.size >= 2) {
+        val right = stack.pop() ?: 0.0
+        val left = stack.pop() ?: 0.0
+        stack.push(op(left, right))
+    } else println("Stack error.")
+}
+
+private fun unaryOp(stack: ArrayDeque<Double>, op: (Double) -> Double) {
+    if (stack.size >= 1) {
+        val value = stack.pop() ?: 0.0
+        stack.push(op(value))
+    } else println("Stack error.")
+}
+
 object Add : Operator() {
     override fun apply(stack: ArrayDeque<Double>) {
-        if (stack.size >= 2) {
-            val right = stack.pop() ?: 0.0
-            val left = stack.pop() ?: 0.0
-            stack.push(left + right)
-        } else println("Stack error.")
+        binaryOp(stack) { left, right -> left + right }
     }
 }
 
 object Sub : Operator() {
     override fun apply(stack: ArrayDeque<Double>) {
-        if (stack.size >= 2) {
-            val right = stack.pop() ?: 0.0
-            val left = stack.pop() ?: 0.0
-            stack.push(left - right)
-        } else println("Stack error.")
+        binaryOp(stack) { left, right -> left - right }
     }
 }
 
 object Mul : Operator() {
     override fun apply(stack: ArrayDeque<Double>) {
-        if (stack.size >= 2) {
-            val right = stack.pop() ?: 0.0
-            val left = stack.pop() ?: 0.0
-            stack.push(left * right)
-        } else println("Stack error.")
+        binaryOp(stack) { left, right -> left * right }
     }
 }
 
@@ -89,10 +94,31 @@ object Div : Operator() {
 
 object Sqr : Operator() {
     override fun apply(stack: ArrayDeque<Double>) {
-        if (stack.size >= 1) {
-            val operand = stack.pop() ?: 0.0
-            stack.push(operand * operand)
-        } else println("Stack error.")
+        unaryOp(stack) { it * it }
+    }
+}
+
+object Exp : Operator() {
+    override fun apply(stack: ArrayDeque<Double>) {
+        unaryOp(stack) { kotlin.math.exp(it) }
+    }
+}
+
+object Sin : Operator() {
+    override fun apply(stack: ArrayDeque<Double>) {
+        unaryOp(stack) { kotlin.math.sin(it) }
+    }
+}
+
+object Cos : Operator() {
+    override fun apply(stack: ArrayDeque<Double>) {
+        unaryOp(stack) { kotlin.math.cos(it) }
+    }
+}
+
+object Pow : Operator() {
+    override fun apply(stack: ArrayDeque<Double>) {
+        binaryOp(stack) { left, right -> left.pow(right) }
     }
 }
 
@@ -110,6 +136,10 @@ fun operatorFromString(opCode: String): Operator {
         "*" -> return Mul
         "/" -> return Div
         "sqr" -> return Sqr
+        "exp" -> return Exp
+        "sin" -> return Sin
+        "cos" -> return Cos
+        "pow" -> return Pow
     }
 
     return Nop
