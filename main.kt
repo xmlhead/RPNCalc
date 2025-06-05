@@ -118,7 +118,7 @@ object Cos : Operator() {
 
 object Pow : Operator() {
     override fun apply(stack: ArrayDeque<Double>) {
-        binaryOp(stack) { left, right -> kotlin.math.pow(left, right) }
+        binaryOp(stack) { left, right -> left.pow(right) }
     }
 }
 
